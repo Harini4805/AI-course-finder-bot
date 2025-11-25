@@ -1,9 +1,12 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { ArrowLeft, CheckCircle, Clock, Zap, Target, BookOpen } from 'lucide-react'
+import type React from "react"
+
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { ArrowLeft, CheckCircle, Clock, Zap, Target, BookOpen } from "lucide-react"
+import { Cloud } from "./cloud" // Adjust the import path as necessary
 
 interface CareerPathProps {
   onBack: () => void
@@ -31,226 +34,324 @@ interface Module {
   duration: string
 }
 
+interface Course {
+  provider: string
+  title: string
+  description: string
+  level: string
+  duration: string
+  price: string
+  url: string
+  rating: number
+}
+
 const CAREER_PATHS: CareerPath[] = [
   {
-    id: 'fullstack',
-    title: 'Full-Stack Developer',
-    description: 'Build complete web applications from frontend to backend',
+    id: "fullstack",
+    title: "Full-Stack Developer",
+    description: "Build complete web applications from frontend to backend",
     icon: <Zap className="h-8 w-8" />,
-    duration: '6-12 months',
-    difficulty: 'Intermediate',
-    salary: '$80,000 - $150,000/year',
-    demand: 'Very High',
-    requiredSkills: ['JavaScript', 'React', 'Node.js', 'Databases', 'APIs', 'Git'],
-    jobTitles: ['Full-Stack Developer', 'Web Developer', 'Software Engineer'],
+    duration: "6-12 months",
+    difficulty: "Intermediate",
+    salary: "$80,000 - $150,000/year",
+    demand: "Very High",
+    requiredSkills: ["JavaScript", "React", "Node.js", "Databases", "APIs", "Git"],
+    jobTitles: ["Full-Stack Developer", "Web Developer", "Software Engineer"],
     modules: [
       {
         id: 1,
-        title: 'Frontend Fundamentals',
-        courses: ['HTML/CSS Basics', 'JavaScript Essentials', 'React Fundamentals'],
-        skills: ['DOM Manipulation', 'State Management', 'Component Design'],
-        duration: '2-3 months',
+        title: "Frontend Fundamentals",
+        courses: ["HTML/CSS Basics", "JavaScript Essentials", "React Fundamentals"],
+        skills: ["DOM Manipulation", "State Management", "Component Design"],
+        duration: "2-3 months",
       },
       {
         id: 2,
-        title: 'Backend Development',
-        courses: ['Node.js & Express', 'RESTful APIs', 'Authentication & Security'],
-        skills: ['Server Development', 'Database Design', 'API Development'],
-        duration: '2-3 months',
+        title: "Backend Development",
+        courses: ["Node.js & Express", "RESTful APIs", "Authentication & Security"],
+        skills: ["Server Development", "Database Design", "API Development"],
+        duration: "2-3 months",
       },
       {
         id: 3,
-        title: 'Databases & DevOps',
-        courses: ['SQL & NoSQL', 'Docker & Deployment', 'CI/CD Pipelines'],
-        skills: ['Database Management', 'Cloud Deployment', 'DevOps Basics'],
-        duration: '1-2 months',
+        title: "Databases & DevOps",
+        courses: ["SQL & NoSQL", "Docker & Deployment", "CI/CD Pipelines"],
+        skills: ["Database Management", "Cloud Deployment", "DevOps Basics"],
+        duration: "1-2 months",
       },
       {
         id: 4,
-        title: 'Real-World Projects',
-        courses: ['Build 3-5 complete projects', 'Open Source Contributions', 'Portfolio Building'],
-        skills: ['Problem Solving', 'Code Review', 'Collaboration'],
-        duration: '2-3 months',
+        title: "Real-World Projects",
+        courses: ["Build 3-5 complete projects", "Open Source Contributions", "Portfolio Building"],
+        skills: ["Problem Solving", "Code Review", "Collaboration"],
+        duration: "2-3 months",
       },
     ],
   },
   {
-    id: 'data-analyst',
-    title: 'Data Analyst',
-    description: 'Transform data into actionable insights for business decisions',
+    id: "data-analyst",
+    title: "Data Analyst",
+    description: "Transform data into actionable insights for business decisions",
     icon: <Target className="h-8 w-8" />,
-    duration: '4-8 months',
-    difficulty: 'Intermediate',
-    salary: '$60,000 - $120,000/year',
-    demand: 'Very High',
-    requiredSkills: ['SQL', 'Python/R', 'Statistics', 'Tableau', 'Excel', 'Data Visualization'],
-    jobTitles: ['Data Analyst', 'Business Analyst', 'Analytics Engineer'],
+    duration: "4-8 months",
+    difficulty: "Intermediate",
+    salary: "$60,000 - $120,000/year",
+    demand: "Very High",
+    requiredSkills: ["SQL", "Python/R", "Statistics", "Tableau", "Excel", "Data Visualization"],
+    jobTitles: ["Data Analyst", "Business Analyst", "Analytics Engineer"],
     modules: [
       {
         id: 1,
-        title: 'SQL Mastery',
-        courses: ['SQL Fundamentals', 'Complex Queries', 'Database Design'],
-        skills: ['Query Writing', 'Data Extraction', 'Performance Optimization'],
-        duration: '1-2 months',
+        title: "SQL Mastery",
+        courses: ["SQL Fundamentals", "Complex Queries", "Database Design"],
+        skills: ["Query Writing", "Data Extraction", "Performance Optimization"],
+        duration: "1-2 months",
       },
       {
         id: 2,
-        title: 'Programming for Analytics',
-        courses: ['Python for Data Analysis', 'Pandas & NumPy', 'Data Cleaning'],
-        skills: ['Data Processing', 'Automation', 'Scripting'],
-        duration: '1-2 months',
+        title: "Programming for Analytics",
+        courses: ["Python for Data Analysis", "Pandas & NumPy", "Data Cleaning"],
+        skills: ["Data Processing", "Automation", "Scripting"],
+        duration: "1-2 months",
       },
       {
         id: 3,
-        title: 'Statistics & Visualization',
-        courses: ['Statistics Fundamentals', 'Tableau/Power BI', 'Dashboard Creation'],
-        skills: ['Statistical Analysis', 'Visualization', 'Storytelling'],
-        duration: '1-2 months',
+        title: "Statistics & Visualization",
+        courses: ["Statistics Fundamentals", "Tableau/Power BI", "Dashboard Creation"],
+        skills: ["Statistical Analysis", "Visualization", "Storytelling"],
+        duration: "1-2 months",
       },
       {
         id: 4,
-        title: 'Real Analytics Projects',
-        courses: ['Case Studies', 'Real Datasets', 'Business Intelligence'],
-        skills: ['Business Acumen', 'Communication', 'Decision Support'],
-        duration: '1-2 months',
+        title: "Real Analytics Projects",
+        courses: ["Case Studies", "Real Datasets", "Business Intelligence"],
+        skills: ["Business Acumen", "Communication", "Decision Support"],
+        duration: "1-2 months",
       },
     ],
   },
   {
-    id: 'machine-learning',
-    title: 'Machine Learning Engineer',
-    description: 'Build intelligent systems and predictive models',
+    id: "machine-learning",
+    title: "Machine Learning Engineer",
+    description: "Build intelligent systems and predictive models",
     icon: <BookOpen className="h-8 w-8" />,
-    duration: '8-12 months',
-    difficulty: 'Advanced',
-    salary: '$100,000 - $200,000/year',
-    demand: 'High',
-    requiredSkills: ['Python', 'Statistics', 'Mathematics', 'TensorFlow', 'Deep Learning', 'SQL'],
-    jobTitles: ['ML Engineer', 'Data Scientist', 'AI Engineer'],
+    duration: "8-12 months",
+    difficulty: "Advanced",
+    salary: "$100,000 - $200,000/year",
+    demand: "High",
+    requiredSkills: ["Python", "Statistics", "Mathematics", "TensorFlow", "Deep Learning", "SQL"],
+    jobTitles: ["ML Engineer", "Data Scientist", "AI Engineer"],
     modules: [
       {
         id: 1,
-        title: 'Python & Mathematics',
-        courses: ['Advanced Python', 'Linear Algebra', 'Calculus & Statistics'],
-        skills: ['Mathematical Programming', 'Algorithm Analysis', 'Data Structures'],
-        duration: '2 months',
+        title: "Python & Mathematics",
+        courses: ["Advanced Python", "Linear Algebra", "Calculus & Statistics"],
+        skills: ["Mathematical Programming", "Algorithm Analysis", "Data Structures"],
+        duration: "2 months",
       },
       {
         id: 2,
-        title: 'Machine Learning Basics',
-        courses: ['Supervised Learning', 'Unsupervised Learning', 'Feature Engineering'],
-        skills: ['Model Development', 'Data Preprocessing', 'Hyperparameter Tuning'],
-        duration: '2-3 months',
+        title: "Machine Learning Basics",
+        courses: ["Supervised Learning", "Unsupervised Learning", "Feature Engineering"],
+        skills: ["Model Development", "Data Preprocessing", "Hyperparameter Tuning"],
+        duration: "2-3 months",
       },
       {
         id: 3,
-        title: 'Deep Learning',
-        courses: ['Neural Networks', 'CNNs & RNNs', 'Computer Vision', 'NLP'],
-        skills: ['Deep Learning Architecture', 'Transfer Learning', 'Advanced Techniques'],
-        duration: '2-3 months',
+        title: "Deep Learning",
+        courses: ["Neural Networks", "CNNs & RNNs", "Computer Vision", "NLP"],
+        skills: ["Deep Learning Architecture", "Transfer Learning", "Advanced Techniques"],
+        duration: "2-3 months",
       },
       {
         id: 4,
-        title: 'Production & Deployment',
-        courses: ['MLOps', 'Model Deployment', 'Cloud Platforms'],
-        skills: ['Model Serving', 'Monitoring', 'Scalability'],
-        duration: '1-2 months',
+        title: "Production & Deployment",
+        courses: ["MLOps", "Model Deployment", "Cloud Platforms"],
+        skills: ["Model Serving", "Monitoring", "Scalability"],
+        duration: "1-2 months",
       },
     ],
   },
   {
-    id: 'ui-ux-designer',
-    title: 'UI/UX Designer',
-    description: 'Create user-centered digital experiences and interfaces',
+    id: "ui-ux-designer",
+    title: "UI/UX Designer",
+    description: "Create user-centered digital experiences and interfaces",
     icon: <Zap className="h-8 w-8" />,
-    duration: '4-6 months',
-    difficulty: 'Beginner to Intermediate',
-    salary: '$70,000 - $130,000/year',
-    demand: 'High',
-    requiredSkills: ['Figma', 'Design Thinking', 'Prototyping', 'User Research', 'Wireframing'],
-    jobTitles: ['UI Designer', 'UX Designer', 'Product Designer'],
+    duration: "4-6 months",
+    difficulty: "Beginner to Intermediate",
+    salary: "$70,000 - $130,000/year",
+    demand: "High",
+    requiredSkills: ["Figma", "Design Thinking", "Prototyping", "User Research", "Wireframing"],
+    jobTitles: ["UI Designer", "UX Designer", "Product Designer"],
     modules: [
       {
         id: 1,
-        title: 'Design Fundamentals',
-        courses: ['Design Principles', 'Color Theory', 'Typography', 'Layout'],
-        skills: ['Visual Design', 'Composition', 'Design Systems'],
-        duration: '1-2 months',
+        title: "Design Fundamentals",
+        courses: ["Design Principles", "Color Theory", "Typography", "Layout"],
+        skills: ["Visual Design", "Composition", "Design Systems"],
+        duration: "1-2 months",
       },
       {
         id: 2,
-        title: 'User Experience',
-        courses: ['User Research', 'Wireframing', 'User Journey Mapping', 'Usability Testing'],
-        skills: ['Empathy Mapping', 'Personas', 'User Testing'],
-        duration: '1-2 months',
+        title: "User Experience",
+        courses: ["User Research", "Wireframing", "User Journey Mapping", "Usability Testing"],
+        skills: ["Empathy Mapping", "Personas", "User Testing"],
+        duration: "1-2 months",
       },
       {
         id: 3,
-        title: 'Tools & Prototyping',
-        courses: ['Figma Mastery', 'Prototyping', 'Interaction Design'],
-        skills: ['Tool Proficiency', 'Prototyping', 'Animation Basics'],
-        duration: '1 month',
+        title: "Tools & Prototyping",
+        courses: ["Figma Mastery", "Prototyping", "Interaction Design"],
+        skills: ["Tool Proficiency", "Prototyping", "Animation Basics"],
+        duration: "1 month",
       },
       {
         id: 4,
-        title: 'Portfolio & Projects',
-        courses: ['Case Study Creation', 'Portfolio Building', 'Real Projects'],
-        skills: ['Communication', 'Storytelling', 'Presentation'],
-        duration: '1-2 months',
+        title: "Portfolio & Projects",
+        courses: ["Case Study Creation", "Portfolio Building", "Real Projects"],
+        skills: ["Communication", "Storytelling", "Presentation"],
+        duration: "1-2 months",
       },
     ],
   },
   {
-    id: 'cloud-engineer',
-    title: 'Cloud Engineer',
-    description: 'Design and manage cloud infrastructure and services',
+    id: "cloud-engineer",
+    title: "Cloud Engineer",
+    description: "Design and manage cloud infrastructure and services",
     icon: <Cloud className="h-8 w-8" />,
-    duration: '6-12 months',
-    difficulty: 'Intermediate to Advanced',
-    salary: '$90,000 - $180,000/year',
-    demand: 'Very High',
-    requiredSkills: ['AWS/Azure/GCP', 'Linux', 'Docker', 'Kubernetes', 'Networking', 'Security'],
-    jobTitles: ['Cloud Engineer', 'DevOps Engineer', 'Infrastructure Engineer'],
+    duration: "6-12 months",
+    difficulty: "Intermediate to Advanced",
+    salary: "$90,000 - $180,000/year",
+    demand: "Very High",
+    requiredSkills: ["AWS/Azure/GCP", "Linux", "Docker", "Kubernetes", "Networking", "Security"],
+    jobTitles: ["Cloud Engineer", "DevOps Engineer", "Infrastructure Engineer"],
     modules: [
       {
         id: 1,
-        title: 'Linux & Networking',
-        courses: ['Linux Fundamentals', 'Networking Basics', 'Security Fundamentals'],
-        skills: ['Command Line', 'Network Administration', 'Security Practices'],
-        duration: '1-2 months',
+        title: "Linux & Networking",
+        courses: ["Linux Fundamentals", "Networking Basics", "Security Fundamentals"],
+        skills: ["Command Line", "Network Administration", "Security Practices"],
+        duration: "1-2 months",
       },
       {
         id: 2,
-        title: 'Cloud Platforms',
-        courses: ['AWS Core Services', 'Azure Fundamentals', 'Cloud Architecture'],
-        skills: ['Cloud Services', 'Infrastructure Design', 'Cost Optimization'],
-        duration: '2-3 months',
+        title: "Cloud Platforms",
+        courses: ["AWS Core Services", "Azure Fundamentals", "Cloud Architecture"],
+        skills: ["Cloud Services", "Infrastructure Design", "Cost Optimization"],
+        duration: "2-3 months",
       },
       {
         id: 3,
-        title: 'Containerization & Orchestration',
-        courses: ['Docker', 'Kubernetes', 'Container Deployment'],
-        skills: ['Container Management', 'Orchestration', 'Microservices'],
-        duration: '1-2 months',
+        title: "Containerization & Orchestration",
+        courses: ["Docker", "Kubernetes", "Container Deployment"],
+        skills: ["Container Management", "Orchestration", "Microservices"],
+        duration: "1-2 months",
       },
       {
         id: 4,
-        title: 'DevOps & Automation',
-        courses: ['CI/CD Pipelines', 'Infrastructure as Code', 'Monitoring'],
-        skills: ['Automation', 'Monitoring', 'Troubleshooting'],
-        duration: '1-2 months',
+        title: "DevOps & Automation",
+        courses: ["CI/CD Pipelines", "Infrastructure as Code", "Monitoring"],
+        skills: ["Automation", "Monitoring", "Troubleshooting"],
+        duration: "1-2 months",
       },
     ],
   },
 ]
 
-function Cloud({ className }: { className: string }) {
-  return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 14a6 6 0 0 0-8.5-5.5 5 5 0 0 0-9.8 1.3A4.5 4.5 0 0 0 20 14z"/></svg>
+async function fetchCareerCourses(careerPath: string) {
+  try {
+    const response = await fetch("/api/career-courses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ careerPath }),
+    })
+    const data = await response.json()
+    return data.courses || []
+  } catch (error) {
+    console.error("Error fetching career courses:", error)
+    return []
+  }
 }
 
 export function CareerPaths({ onBack }: CareerPathProps) {
   const [selectedPath, setSelectedPath] = useState<CareerPath | null>(null)
   const [expandedModule, setExpandedModule] = useState<number | null>(null)
+  const [careerCourses, setCareerCourses] = useState<Course[]>([])
+  const [isLoadingCourses, setIsLoadingCourses] = useState(false)
+  const [showCourseRecommendations, setShowCourseRecommendations] = useState(false)
+
+  const handleStartPath = async () => {
+    setIsLoadingCourses(true)
+    const courses = await fetchCareerCourses(selectedPath!.id)
+    setCareerCourses(courses)
+    setShowCourseRecommendations(true)
+    setIsLoadingCourses(false)
+  }
+
+  if (showCourseRecommendations && selectedPath) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950">
+        {/* Header */}
+        <div className="border-b border-slate-700 bg-slate-900/50 px-4 py-4 backdrop-blur-sm">
+          <div className="mx-auto max-w-6xl">
+            <button
+              onClick={() => setShowCourseRecommendations(false)}
+              className="mb-4 flex items-center gap-2 text-slate-400 hover:text-white"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              Back to Path Details
+            </button>
+            <h1 className="text-3xl font-bold text-white">Courses for {selectedPath.title}</h1>
+            <p className="text-slate-400 mt-2">Explore courses from multiple platforms</p>
+          </div>
+        </div>
+
+        {/* Courses Grid */}
+        <div className="mx-auto max-w-6xl px-4 py-8">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {careerCourses.length > 0 ? (
+              careerCourses.map((course, idx) => (
+                <Card key={idx} className="border-slate-700 bg-slate-800 p-4 hover:border-blue-500 transition">
+                  <div className="flex items-start justify-between mb-3">
+                    <span className="text-xs font-semibold text-blue-400">{course.provider}</span>
+                    <span className="text-sm font-bold text-yellow-400">{course.rating}★</span>
+                  </div>
+                  <h3 className="font-bold text-white mb-2">{course.title}</h3>
+                  <p className="text-sm text-slate-400 mb-4">{course.description}</p>
+                  <div className="space-y-2 text-sm mb-4">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Level:</span>
+                      <span className="text-white font-semibold">{course.level}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Duration:</span>
+                      <span className="text-white font-semibold">{course.duration}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Price:</span>
+                      <span className="text-green-400 font-semibold">{course.price}</span>
+                    </div>
+                  </div>
+                  <a
+                    href={course.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full block text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition"
+                  >
+                    View on {course.provider}
+                  </a>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <p className="text-slate-400 text-lg">Loading courses...</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (selectedPath) {
     return (
@@ -321,10 +422,7 @@ export function CareerPaths({ onBack }: CareerPathProps) {
                 <h3 className="font-semibold text-white mb-3">Required Skills</h3>
                 <div className="flex flex-wrap gap-2">
                   {selectedPath.requiredSkills.map((skill, idx) => (
-                    <span
-                      key={idx}
-                      className="rounded-full bg-blue-600/20 px-3 py-1 text-xs text-blue-300"
-                    >
+                    <span key={idx} className="rounded-full bg-blue-600/20 px-3 py-1 text-xs text-blue-300">
                       {skill}
                     </span>
                   ))}
@@ -333,7 +431,9 @@ export function CareerPaths({ onBack }: CareerPathProps) {
               <div>
                 <h3 className="font-semibold text-white mb-3">Market Demand</h3>
                 <div className="space-y-2">
-                  <p className="text-sm text-slate-300">Job Demand: <span className="font-semibold text-green-400">{selectedPath.demand}</span></p>
+                  <p className="text-sm text-slate-300">
+                    Job Demand: <span className="font-semibold text-green-400">{selectedPath.demand}</span>
+                  </p>
                   <p className="text-xs text-slate-400">Growing rapidly across industries</p>
                 </div>
               </div>
@@ -359,9 +459,7 @@ export function CareerPaths({ onBack }: CareerPathProps) {
                         <p className="text-xs text-slate-400">{module.duration}</p>
                       </div>
                     </div>
-                    <span className={`transition ${expandedModule === idx ? 'rotate-180' : ''}`}>
-                      ▼
-                    </span>
+                    <span className={`transition ${expandedModule === idx ? "rotate-180" : ""}`}>▼</span>
                   </button>
 
                   {expandedModule === idx && (
@@ -399,8 +497,12 @@ export function CareerPaths({ onBack }: CareerPathProps) {
 
           {/* CTA */}
           <div className="mt-8 flex gap-4">
-            <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-lg py-6">
-              Start This Path
+            <Button
+              onClick={handleStartPath}
+              disabled={isLoadingCourses}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-lg py-6"
+            >
+              {isLoadingCourses ? "Loading Courses..." : "Start This Path"}
             </Button>
             <Button
               onClick={() => setSelectedPath(null)}
@@ -420,10 +522,7 @@ export function CareerPaths({ onBack }: CareerPathProps) {
       {/* Header */}
       <div className="border-b border-slate-700 bg-slate-900/50 px-4 py-4 backdrop-blur-sm">
         <div className="mx-auto max-w-6xl">
-          <button
-            onClick={onBack}
-            className="mb-4 flex items-center gap-2 text-slate-400 hover:text-white"
-          >
+          <button onClick={onBack} className="mb-4 flex items-center gap-2 text-slate-400 hover:text-white">
             <ArrowLeft className="h-5 w-5" />
             Back
           </button>
@@ -441,9 +540,7 @@ export function CareerPaths({ onBack }: CareerPathProps) {
               className="border-slate-700 bg-slate-800 p-6 hover:border-blue-500 transition cursor-pointer group"
               onClick={() => setSelectedPath(path)}
             >
-              <div className="mb-4 text-4xl text-blue-400 group-hover:scale-110 transition">
-                {path.icon}
-              </div>
+              <div className="mb-4 text-4xl text-blue-400 group-hover:scale-110 transition">{path.icon}</div>
               <h2 className="mb-2 text-xl font-bold text-white">{path.title}</h2>
               <p className="mb-4 text-sm text-slate-400">{path.description}</p>
 
@@ -466,19 +563,14 @@ export function CareerPaths({ onBack }: CareerPathProps) {
                 <p className="text-xs text-slate-400 mb-2">Top Skills</p>
                 <div className="flex flex-wrap gap-2">
                   {path.requiredSkills.slice(0, 3).map((skill, idx) => (
-                    <span
-                      key={idx}
-                      className="rounded-full bg-blue-600/20 px-2 py-1 text-xs text-blue-300"
-                    >
+                    <span key={idx} className="rounded-full bg-blue-600/20 px-2 py-1 text-xs text-blue-300">
                       {skill}
                     </span>
                   ))}
                 </div>
               </div>
 
-              <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                View Details
-              </Button>
+              <Button className="w-full bg-blue-600 hover:bg-blue-700">View Details</Button>
             </Card>
           ))}
         </div>

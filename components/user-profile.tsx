@@ -1,54 +1,71 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { useAuth } from '@/lib/auth-context'
-import { ArrowLeft, LogOut, Settings } from 'lucide-react'
+import type React from "react"
+
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { useAuth } from "@/lib/auth-context"
+import { ArrowLeft, LogOut, Settings, Upload } from "lucide-react"
 
 interface UserProfileProps {
   onBack: () => void
 }
 
 const EDUCATION_LEVELS = [
-  { id: 'school', label: 'School' },
-  { id: 'ug', label: 'Undergraduate' },
-  { id: 'pg', label: 'Postgraduate' },
-  { id: 'professional', label: 'Professional' },
+  { id: "school", label: "School" },
+  { id: "ug", label: "Undergraduate" },
+  { id: "pg", label: "Postgraduate" },
+  { id: "professional", label: "Professional" },
 ]
 
 const INTEREST_AREAS = [
-  'AI & Machine Learning',
-  'Web Development',
-  'Finance',
-  'Health',
-  'Design',
-  'Data Science',
-  'Cloud Computing',
-  'Mobile Development',
+  "AI & Machine Learning",
+  "Web Development",
+  "Finance",
+  "Health",
+  "Design",
+  "Data Science",
+  "Cloud Computing",
+  "Mobile Development",
 ]
 
-const LEARNING_GOALS = ['Get a job', 'Skill upgrade', 'Certification', 'Hobby learning']
+const LEARNING_GOALS = ["Get a job", "Skill upgrade", "Certification", "Hobby learning"]
 
 const LANGUAGES = [
-  { code: 'en', name: 'English' },
-  { code: 'es', name: 'Spanish' },
-  { code: 'fr', name: 'French' },
-  { code: 'de', name: 'German' },
-  { code: 'zh', name: 'Mandarin' },
-  { code: 'ja', name: 'Japanese' },
+  { code: "en", name: "English" },
+  { code: "es", name: "Spanish" },
+  { code: "fr", name: "French" },
+  { code: "de", name: "German" },
+  { code: "zh", name: "Mandarin" },
+  { code: "ja", name: "Japanese" },
 ]
 
 export function UserProfile({ onBack }: UserProfileProps) {
   const { user, updateProfile, updatePreferences, logout } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
+    name: user?.name || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
   })
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(user?.profilePhoto || null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
 
   if (!user) return null
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const result = reader.result as string
+        setPhotoPreview(result)
+        updateProfile({ profilePhoto: result })
+      }
+      reader.readAsDataURL(file)
+    }
+  }
 
   const handleSaveProfile = () => {
     updateProfile({
@@ -90,10 +107,7 @@ export function UserProfile({ onBack }: UserProfileProps) {
       <div className="border-b border-slate-700 bg-slate-900/50 px-4 py-4 backdrop-blur-sm">
         <div className="mx-auto max-w-4xl">
           <div className="flex items-center justify-between">
-            <button
-              onClick={onBack}
-              className="flex items-center gap-2 text-slate-400 hover:text-white"
-            >
+            <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white">
               <ArrowLeft className="h-5 w-5" />
               Back to Chat
             </button>
@@ -106,6 +120,27 @@ export function UserProfile({ onBack }: UserProfileProps) {
       {/* Content */}
       <div className="mx-auto max-w-4xl px-4 py-8">
         <div className="space-y-6">
+          <Card className="border-slate-700 bg-slate-800 p-6">
+            <h2 className="mb-4 text-xl font-bold text-white">Profile Photo</h2>
+            <div className="flex items-center gap-6">
+              <div className="w-24 h-24 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-slate-600">
+                {photoPreview || profilePhoto ? (
+                  <img src={photoPreview || profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-slate-400 text-3xl">👤</span>
+                )}
+              </div>
+              <div>
+                <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer transition">
+                  <Upload className="h-4 w-4" />
+                  Upload Photo
+                  <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                </label>
+                <p className="text-sm text-slate-400 mt-2">JPG, PNG up to 5MB</p>
+              </div>
+            </div>
+          </Card>
+
           {/* Personal Information */}
           <Card className="border-slate-700 bg-slate-800 p-6">
             <div className="mb-4 flex items-center justify-between">
@@ -115,16 +150,14 @@ export function UserProfile({ onBack }: UserProfileProps) {
                 className="flex items-center gap-2 text-blue-400 hover:text-blue-300"
               >
                 <Settings className="h-4 w-4" />
-                {isEditing ? 'Cancel' : 'Edit'}
+                {isEditing ? "Cancel" : "Edit"}
               </button>
             </div>
 
             {isEditing ? (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Full Name
-                  </label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
                   <input
                     type="text"
                     value={formData.name}
@@ -133,9 +166,7 @@ export function UserProfile({ onBack }: UserProfileProps) {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Email
-                  </label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
                   <input
                     type="email"
                     value={formData.email}
@@ -144,9 +175,7 @@ export function UserProfile({ onBack }: UserProfileProps) {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Phone (Optional)
-                  </label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Phone (Optional)</label>
                   <input
                     type="tel"
                     value={formData.phone}
@@ -154,10 +183,7 @@ export function UserProfile({ onBack }: UserProfileProps) {
                     className="w-full rounded-lg border border-slate-600 bg-slate-700 px-4 py-2 text-white focus:border-blue-500 focus:outline-none"
                   />
                 </div>
-                <Button
-                  onClick={handleSaveProfile}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                >
+                <Button onClick={handleSaveProfile} className="w-full bg-blue-600 hover:bg-blue-700">
                   Save Changes
                 </Button>
               </div>
@@ -201,8 +227,8 @@ export function UserProfile({ onBack }: UserProfileProps) {
                       }
                       className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
                         user.preferences.educationLevel === level.id
-                          ? 'bg-blue-600 text-white'
-                          : 'border border-slate-600 text-slate-300 hover:border-slate-500'
+                          ? "bg-blue-600 text-white"
+                          : "border border-slate-600 text-slate-300 hover:border-slate-500"
                       }`}
                     >
                       {level.label}
@@ -242,8 +268,8 @@ export function UserProfile({ onBack }: UserProfileProps) {
                       onClick={() => toggleInterest(area)}
                       className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
                         user.preferences.interestAreas.includes(area)
-                          ? 'bg-blue-600 text-white'
-                          : 'border border-slate-600 text-slate-300 hover:border-slate-500'
+                          ? "bg-blue-600 text-white"
+                          : "border border-slate-600 text-slate-300 hover:border-slate-500"
                       }`}
                     >
                       {area}
@@ -262,40 +288,11 @@ export function UserProfile({ onBack }: UserProfileProps) {
                       onClick={() => toggleGoal(goal)}
                       className={`w-full rounded-lg px-4 py-2 text-left font-medium transition ${
                         user.preferences.learningGoals.includes(goal)
-                          ? 'bg-blue-600 text-white'
-                          : 'border border-slate-600 text-slate-300 hover:border-slate-500'
+                          ? "bg-blue-600 text-white"
+                          : "border border-slate-600 text-slate-300 hover:border-slate-500"
                       }`}
                     >
                       {goal}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Interaction Mode */}
-              <div>
-                <h3 className="mb-3 font-medium text-white">Interaction Mode</h3>
-                <div className="space-y-2">
-                  {[
-                    { id: 'text', label: 'Text-based bot' },
-                    { id: 'voice', label: 'Voice-based bot' },
-                    { id: 'voice-tts', label: 'AI assistant chat' },
-                  ].map((mode) => (
-                    <button
-                      key={mode.id}
-                      onClick={() =>
-                        updatePreferences({
-                          ...user.preferences,
-                          interactionMode: mode.id as any,
-                        })
-                      }
-                      className={`w-full rounded-lg px-4 py-2 text-left font-medium transition ${
-                        user.preferences.interactionMode === mode.id
-                          ? 'bg-blue-600 text-white'
-                          : 'border border-slate-600 text-slate-300 hover:border-slate-500'
-                      }`}
-                    >
-                      {mode.label}
                     </button>
                   ))}
                 </div>
@@ -306,11 +303,7 @@ export function UserProfile({ onBack }: UserProfileProps) {
           {/* Account Actions */}
           <Card className="border-slate-700 bg-slate-800 p-6">
             <h2 className="mb-4 text-xl font-bold text-white">Account</h2>
-            <Button
-              onClick={handleLogout}
-              variant="destructive"
-              className="w-full"
-            >
+            <Button onClick={handleLogout} variant="destructive" className="w-full">
               <LogOut className="mr-2 h-4 w-4" />
               Sign Out
             </Button>

@@ -13,17 +13,33 @@ import { WishlistPage } from "./wishlist-page"
 import { CareerPaths } from "./career-paths"
 import { useAuth } from "@/lib/auth-context"
 import { useWishlist } from "@/lib/wishlist-context"
-import { Mic, Send, Globe, Settings, Heart, Compass, ArrowLeft, FileText, TrendingUp } from "lucide-react"
+import {
+  Mic,
+  Send,
+  Settings,
+  Heart,
+  Compass,
+  ArrowLeft,
+  FileText,
+  Plus,
+  Trash2,
+  VolumeX,
+  Volume2,
+  Search,
+  Archive,
+} from "lucide-react"
 import { CourseProgress } from "./course-progress"
 import { useProgress } from "@/lib/progress-context"
 
 const LANGUAGES = [
-  { code: "en", name: "English" },
-  { code: "es", name: "Español" },
-  { code: "fr", name: "Français" },
-  { code: "de", name: "Deutsch" },
-  { code: "zh", name: "中文" },
-  { code: "ja", name: "日本語" },
+  { code: "en", name: "English", speechCode: "en-US" },
+  { code: "ta", name: "தமிழ்", speechCode: "ta-IN" },
+  { code: "hi", name: "हिंदी", speechCode: "hi-IN" },
+  { code: "es", name: "Español", speechCode: "es-ES" },
+  { code: "fr", name: "Français", speechCode: "fr-FR" },
+  { code: "de", name: "Deutsch", speechCode: "de-DE" },
+  { code: "zh", name: "中文", speechCode: "zh-CN" },
+  { code: "ja", name: "日本語", speechCode: "ja-JP" },
 ]
 
 interface Message {
@@ -34,16 +50,34 @@ interface Message {
   timestamp: Date
 }
 
+interface ChatSession {
+  id: string
+  title: string
+  messages: Message[]
+  createdAt: Date
+  archived?: boolean
+}
+
 export function ChatInterface() {
   const { user, logout } = useAuth()
   const { addCourse, isCoursesSaved } = useWishlist()
   const { enrolledCourses } = useProgress()
+
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("chatSessions")
+      return saved ? JSON.parse(saved) : []
+    }
+    return []
+  })
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
+  const [showArchivedChats, setShowArchivedChats] = useState(false)
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
       role: "assistant",
-      content:
-        "Hello! I'm your AI course advisor. Tell me about your learning interests, goals, or skills you want to develop, and I'll recommend personalized courses for you.",
+      content: "Hi! I'm your AI course advisor. What do you want to learn today?",
       timestamp: new Date(),
     },
   ])
@@ -62,50 +96,134 @@ export function ChatInterface() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
   const [isSpeaking, setIsSpeaking] = useState(false)
+  const synthRef = useRef<SpeechSynthesisUtterance | null>(null)
+
+  useEffect(() => {
+    if (chatSessions.length > 0) {
+      localStorage.setItem("chatSessions", JSON.stringify(chatSessions))
+    }
+  }, [chatSessions])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
   useEffect(() => {
+    if (typeof window === "undefined") return
+
     const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition
     if (SpeechRecognition) {
       recognitionRef.current = new SpeechRecognition()
       recognitionRef.current.continuous = false
       recognitionRef.current.interimResults = true
 
-      recognitionRef.current.onstart = () => setIsListening(true)
+      recognitionRef.current.onstart = () => {
+        setIsListening(true)
+        setRecognitionError("")
+      }
       recognitionRef.current.onend = () => setIsListening(false)
 
       recognitionRef.current.onresult = (event: any) => {
-        let interimTranscript = ""
+        let finalTranscript = ""
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript
           if (event.results[i].isFinal) {
-            setInput((prev) => prev + transcript)
-          } else {
-            interimTranscript += transcript
+            finalTranscript += transcript
           }
+        }
+        if (finalTranscript) {
+          setInput((prev) => prev + finalTranscript)
         }
       }
 
       recognitionRef.current.onerror = (event: any) => {
-        setRecognitionError(`Speech recognition error: ${event.error}`)
+        console.error("[v0] Speech recognition error:", event.error)
+        if (event.error === "not-allowed") {
+          setRecognitionError("Microphone access denied. Please allow microphone in browser settings.")
+        } else if (event.error === "no-speech") {
+          setRecognitionError("No speech detected. Try again.")
+        } else if (event.error === "network") {
+          setRecognitionError("Network error. Check your connection.")
+        } else if (event.error === "aborted") {
+          // User stopped, no error message needed
+        } else {
+          setRecognitionError(`Speech error: ${event.error}`)
+        }
+        setIsListening(false)
       }
     }
   }, [])
 
-  const startListening = () => {
-    if (recognitionRef.current && !isListening) {
-      setRecognitionError("")
-      recognitionRef.current.lang = `${language}-${language === "en" ? "US" : language.toUpperCase()}`
-      recognitionRef.current.start()
+  const startListening = async () => {
+    setRecognitionError("")
+
+    // Check for browser support
+    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      setRecognitionError("Speech recognition not supported. Use Chrome or Edge browser.")
+      return
+    }
+
+    // Request microphone permission first
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true })
+    } catch (err) {
+      setRecognitionError("Microphone access denied. Please allow microphone access.")
+      return
+    }
+
+    if (!recognitionRef.current) {
+      recognitionRef.current = new SpeechRecognition()
+      recognitionRef.current.continuous = false
+      recognitionRef.current.interimResults = true
+
+      recognitionRef.current.onstart = () => {
+        setIsListening(true)
+        setRecognitionError("")
+      }
+      recognitionRef.current.onend = () => setIsListening(false)
+
+      recognitionRef.current.onresult = (event: any) => {
+        let finalTranscript = ""
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript
+          }
+        }
+        if (finalTranscript) {
+          setInput((prev) => prev + finalTranscript)
+        }
+      }
+
+      recognitionRef.current.onerror = (event: any) => {
+        if (event.error !== "aborted") {
+          setRecognitionError(`Speech error: ${event.error}`)
+        }
+        setIsListening(false)
+      }
+    }
+
+    if (!isListening) {
+      const langConfig = LANGUAGES.find((l) => l.code === language)
+      recognitionRef.current.lang = langConfig?.speechCode || "en-US"
+      try {
+        recognitionRef.current.start()
+      } catch (error) {
+        setRecognitionError("Failed to start speech recognition. Try again.")
+      }
     }
   }
 
   const stopListening = () => {
     if (recognitionRef.current && isListening) {
       recognitionRef.current.stop()
+    }
+  }
+
+  const stopSpeaking = () => {
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel()
+      setIsSpeaking(false)
     }
   }
 
@@ -148,13 +266,22 @@ export function ChatInterface() {
       }
 
       setMessages((prev) => [...prev, assistantMessage])
-      speakMessage(data.message)
+
+      if (data.courses && data.courses.length > 0) {
+        const courseNames = data.courses
+          .slice(0, 2)
+          .map((c: any) => c.title)
+          .join(" and ")
+        speakMessage(`${data.message.split(".")[0]}. Found ${data.courses.length} courses including ${courseNames}.`)
+      } else {
+        speakMessage(data.message.split(".").slice(0, 2).join("."))
+      }
     } catch (error) {
       console.error("Error:", error)
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "Sorry, I encountered an error. Please try again.",
+        content: "Sorry, something went wrong. Please try again.",
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, errorMessage])
@@ -166,16 +293,65 @@ export function ChatInterface() {
   const speakMessage = (text: string) => {
     if ("speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = `${language}-${language === "en" ? "US" : language.toUpperCase()}`
-      utterance.rate = 0.9
+      const langConfig = LANGUAGES.find((l) => l.code === language)
+      utterance.lang = langConfig?.speechCode || "en-US"
+      utterance.rate = 0.95
       utterance.pitch = 1
 
       utterance.onstart = () => setIsSpeaking(true)
       utterance.onend = () => setIsSpeaking(false)
+      utterance.onerror = () => setIsSpeaking(false)
 
+      synthRef.current = utterance
       window.speechSynthesis.cancel()
       window.speechSynthesis.speak(utterance)
     }
+  }
+
+  const startNewChat = () => {
+    if (messages.length > 1) {
+      const newSession: ChatSession = {
+        id: Date.now().toString(),
+        title: messages.find((m) => m.role === "user")?.content.slice(0, 40) || "New Chat",
+        messages: [...messages],
+        createdAt: new Date(),
+        archived: false,
+      }
+      setChatSessions((prev) => [newSession, ...prev])
+    }
+
+    setMessages([
+      {
+        id: "1",
+        role: "assistant",
+        content: "Hi! I'm your AI course advisor. What do you want to learn today?",
+        timestamp: new Date(),
+      },
+    ])
+    setCurrentSessionId(null)
+  }
+
+  const loadChatSession = (session: ChatSession) => {
+    setMessages(
+      session.messages.map((m) => ({
+        ...m,
+        timestamp: new Date(m.timestamp),
+      })),
+    )
+    setCurrentSessionId(session.id)
+    setShowChatHistory(false)
+  }
+
+  const deleteChatSession = (sessionId: string) => {
+    setChatSessions((prev) => prev.filter((s) => s.id !== sessionId))
+  }
+
+  const archiveChatSession = (sessionId: string) => {
+    setChatSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, archived: true } : s)))
+  }
+
+  const unarchiveChatSession = (sessionId: string) => {
+    setChatSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, archived: false } : s)))
   }
 
   const handleSaveCourse = (course: any) => {
@@ -208,9 +384,12 @@ export function ChatInterface() {
   }
 
   if (showChatHistory) {
+    const activeSessions = chatSessions.filter((s) => !s.archived)
+    const archivedSessions = chatSessions.filter((s) => s.archived)
+    const displaySessions = showArchivedChats ? archivedSessions : activeSessions
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        {/* Header */}
         <div className="border-b border-slate-700 bg-slate-900/50 px-4 py-4 backdrop-blur-sm">
           <div className="mx-auto max-w-4xl">
             <button
@@ -218,41 +397,83 @@ export function ChatInterface() {
               className="mb-4 flex items-center gap-2 text-slate-400 hover:text-white"
             >
               <ArrowLeft className="h-5 w-5" />
-              Back to Chat
+              Back
             </button>
-            <h1 className="text-2xl font-bold text-white">Chat History</h1>
-            <p className="text-sm text-slate-400">View your previous conversations</p>
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-white">Chat History</h1>
+              <button
+                onClick={() => setShowArchivedChats(!showArchivedChats)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
+                  showArchivedChats ? "bg-amber-600/20 text-amber-400" : "bg-slate-700 text-slate-300"
+                }`}
+              >
+                <Archive className="h-4 w-4" />
+                {showArchivedChats ? "Show Active" : "Show Archived"}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Chat History Messages */}
         <div className="mx-auto max-w-4xl px-4 py-8">
-          <div className="space-y-4">
-            {messages.length > 0 ? (
-              messages.map((message) => (
+          {displaySessions.length > 0 ? (
+            <div className="space-y-3">
+              {displaySessions.map((session) => (
                 <Card
-                  key={message.id}
-                  className={`border-slate-700 p-4 ${
-                    message.role === "user"
-                      ? "bg-blue-600/20 border-blue-500/30 ml-auto max-w-2xl"
-                      : "bg-slate-800/50 border-slate-600"
-                  }`}
+                  key={session.id}
+                  className="border-slate-700 bg-slate-800/50 p-4 hover:bg-slate-800 transition cursor-pointer"
                 >
-                  <div className="flex gap-3">
-                    <div>
-                      <p className="text-xs text-slate-400 mb-1">{message.role === "user" ? "You" : "AI Assistant"}</p>
-                      <p className="text-white text-sm leading-relaxed">{message.content}</p>
-                      <p className="text-xs text-slate-500 mt-2">{message.timestamp.toLocaleTimeString()}</p>
+                  <div className="flex items-center justify-between">
+                    <div onClick={() => loadChatSession(session)} className="flex-1">
+                      <h3 className="text-white font-medium truncate">{session.title}</h3>
+                      <p className="text-xs text-slate-400 mt-1">
+                        {new Date(session.createdAt).toLocaleDateString()} · {session.messages.length} messages
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      {showArchivedChats ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            unarchiveChatSession(session.id)
+                          }}
+                          className="p-2 text-slate-400 hover:text-green-400 hover:bg-green-400/10 rounded"
+                          title="Unarchive"
+                        >
+                          <Archive className="h-4 w-4" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            archiveChatSession(session.id)
+                          }}
+                          className="p-2 text-slate-400 hover:text-amber-400 hover:bg-amber-400/10 rounded"
+                          title="Archive"
+                        >
+                          <Archive className="h-4 w-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          deleteChatSession(session.id)
+                        }}
+                        className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 </Card>
-              ))
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-slate-400">No chat history yet. Start asking questions!</p>
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 text-slate-600 mx-auto mb-4" />
+              <p className="text-slate-400">{showArchivedChats ? "No archived chats" : "No chat history yet"}</p>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -276,77 +497,64 @@ export function ChatInterface() {
 
   return (
     <div className="flex h-screen flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Header */}
-      <div className="border-b border-slate-700 bg-slate-900/50 px-4 py-4 backdrop-blur-sm">
-        <div className="mx-auto max-w-4xl">
+      <div className="border-b border-slate-700 bg-slate-900/50 px-4 py-3 backdrop-blur-sm">
+        <div className="mx-auto max-w-5xl">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-white">AI Course Finder</h1>
-              <p className="text-sm text-slate-400">Personalized learning recommendations</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-white">AI Course Finder</h1>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-slate-400" />
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white hover:border-slate-500 focus:border-blue-500 focus:outline-none"
-                >
-                  {LANGUAGES.map((lang) => (
-                    <option key={lang.code} value={lang.code}>
-                      {lang.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {enrolledCourses.length > 0 && (
-                <button
-                  onClick={() => setShowProgress(true)}
-                  className="rounded-lg border border-slate-600 px-3 py-2 text-slate-400 hover:border-slate-500 hover:text-white flex items-center gap-2 text-sm relative"
-                  title="Learning Progress"
-                >
-                  <TrendingUp className="h-4 w-4" />
-                  Progress
-                  <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {enrolledCourses.length}
-                  </span>
-                </button>
-              )}
+            <div className="flex items-center gap-1.5">
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                className="rounded-lg border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white"
+              >
+                {LANGUAGES.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={startNewChat}
+                className="rounded-lg border border-slate-600 px-2 py-1.5 text-slate-400 hover:border-blue-500 hover:text-blue-400 flex items-center gap-1 text-xs"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                New
+              </button>
               <button
                 onClick={() => setShowChatHistory(true)}
-                className="rounded-lg border border-slate-600 px-3 py-2 text-slate-400 hover:border-slate-500 hover:text-white flex items-center gap-2 text-sm"
-                title="Chat History"
+                className="rounded-lg border border-slate-600 px-2 py-1.5 text-slate-400 hover:border-slate-500 hover:text-white flex items-center gap-1 text-xs"
               >
-                <FileText className="h-4 w-4" />
+                <FileText className="h-3.5 w-3.5" />
                 History
               </button>
               <button
                 onClick={() => setShowCareerPaths(true)}
-                className="rounded-lg border border-slate-600 px-3 py-2 text-slate-400 hover:border-slate-500 hover:text-white flex items-center gap-2 text-sm"
-                title="Career Paths"
+                className="rounded-lg border border-slate-600 px-2 py-1.5 text-slate-400 hover:border-slate-500 hover:text-white flex items-center gap-1 text-xs"
               >
-                <Compass className="h-4 w-4" />
+                <Compass className="h-3.5 w-3.5" />
                 Paths
               </button>
               <button
                 onClick={() => setShowWishlist(true)}
-                className="rounded-lg border border-slate-600 px-3 py-2 text-slate-400 hover:border-slate-500 hover:text-white flex items-center gap-2 text-sm"
+                className="rounded-lg border border-slate-600 px-2 py-1.5 text-slate-400 hover:border-slate-500 hover:text-white flex items-center gap-1 text-xs"
               >
-                <Heart className="h-4 w-4" />
+                <Heart className="h-3.5 w-3.5" />
                 Wishlist
               </button>
               <button
                 onClick={() => setShowCourseSearch(true)}
-                className="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-400 hover:border-slate-500 hover:text-white"
+                className="rounded-lg border border-slate-600 px-2 py-1.5 text-slate-400 hover:border-slate-500 hover:text-white flex items-center gap-1 text-xs"
               >
+                <Search className="h-3.5 w-3.5" />
                 Browse
               </button>
               <button
                 onClick={() => setShowProfile(true)}
-                className="rounded-lg border border-slate-600 p-2 text-slate-400 hover:border-slate-500 hover:text-white"
-                title="Profile Settings"
+                className="rounded-lg border border-slate-600 p-1.5 text-slate-400 hover:border-slate-500 hover:text-white"
               >
-                <Settings className="h-5 w-5" />
+                <Settings className="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -365,11 +573,20 @@ export function ChatInterface() {
                     <button
                       onClick={() => speakMessage(message.content)}
                       disabled={isSpeaking}
-                      className="text-xs px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 transition"
-                      title="Listen to response"
+                      className="text-xs px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 transition flex items-center gap-1"
                     >
-                      🔊 Speak
+                      <Volume2 className="h-3 w-3" />
+                      Speak
                     </button>
+                    {isSpeaking && (
+                      <button
+                        onClick={stopSpeaking}
+                        className="text-xs px-2 py-1 rounded bg-red-600/20 hover:bg-red-600/30 text-red-400 transition flex items-center gap-1"
+                      >
+                        <VolumeX className="h-3 w-3" />
+                        Stop
+                      </button>
+                    )}
                   </div>
                 )}
                 {message.courses && message.courses.length > 0 && (
@@ -386,7 +603,6 @@ export function ChatInterface() {
                               ? "bg-red-600 text-white"
                               : "bg-slate-700 text-slate-300 hover:bg-slate-600"
                           }`}
-                          title={isCoursesSaved(course.title) ? "Remove from wishlist" : "Add to wishlist"}
                         >
                           <Heart className={`h-4 w-4 ${isCoursesSaved(course.title) ? "fill-current" : ""}`} />
                         </button>
@@ -400,7 +616,7 @@ export function ChatInterface() {
               <div className="flex justify-start">
                 <div className="flex items-center gap-3 rounded-lg bg-slate-800 px-4 py-3">
                   <Spinner />
-                  <span className="text-sm text-slate-300">AI is thinking...</span>
+                  <span className="text-sm text-slate-300">Thinking...</span>
                 </div>
               </div>
             )}
@@ -422,7 +638,7 @@ export function ChatInterface() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
               placeholder="Ask about courses, skills, or learning goals..."
-              className="flex-1 rounded-lg border border-slate-600 bg-slate-800 px-4 py-3 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              className="flex-1 rounded-lg border border-slate-600 bg-slate-800 px-4 py-3 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
               disabled={isLoading}
             />
             <Button
@@ -431,8 +647,8 @@ export function ChatInterface() {
               size="icon"
               className={`rounded-lg border ${
                 isListening
-                  ? "border-red-500 bg-red-500/10 text-red-400 hover:bg-red-500/20"
-                  : "border-slate-600 text-slate-400 hover:border-slate-500 hover:text-slate-300"
+                  ? "border-red-500 bg-red-500/10 text-red-400"
+                  : "border-slate-600 text-slate-400 hover:border-slate-500"
               }`}
               disabled={isLoading}
             >

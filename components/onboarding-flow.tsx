@@ -1,47 +1,38 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { useAuth, type UserPreferences } from '@/lib/auth-context'
-import { ChevronRight, ChevronLeft } from 'lucide-react'
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { useAuth, type UserPreferences } from "@/lib/auth-context"
+import { ChevronRight, ChevronLeft } from "lucide-react"
 
 interface OnboardingFlowProps {
   onComplete: () => void
 }
 
-const EDUCATION_LEVELS = ['School', 'Undergraduate', 'Postgraduate', 'Professional']
+const EDUCATION_LEVELS = ["School", "Undergraduate", "Postgraduate", "Professional"]
 const INTEREST_AREAS = [
-  'AI & Machine Learning',
-  'Web Development',
-  'Finance',
-  'Health',
-  'Design',
-  'Data Science',
-  'Cloud Computing',
-  'Mobile Development',
+  "AI & Machine Learning",
+  "Web Development",
+  "Finance",
+  "Health",
+  "Design",
+  "Data Science",
+  "Cloud Computing",
+  "Mobile Development",
+  "Competitive Exams (JEE/NEET)",
+  "Government Exams (UPSC/TNPSC)",
 ]
-const LEARNING_GOALS = ['Get a job', 'Skill upgrade', 'Certification', 'Hobby learning']
+const LEARNING_GOALS = ["Get a job", "Skill upgrade", "Certification", "Hobby learning", "Exam preparation"]
 const LANGUAGES = [
-  { code: 'en', name: 'English' },
-  { code: 'es', name: 'Spanish' },
-  { code: 'fr', name: 'French' },
-  { code: 'de', name: 'German' },
-  { code: 'zh', name: 'Mandarin' },
-  { code: 'ja', name: 'Japanese' },
-]
-const INTERACTION_MODES = [
-  { id: 'text', label: 'Text-based bot', description: 'Chat with AI using text' },
-  {
-    id: 'voice',
-    label: 'Voice-based bot',
-    description: 'Speak to AI (speech-to-text)',
-  },
-  {
-    id: 'voice-tts',
-    label: 'AI assistant chat',
-    description: 'Voice input & audio responses',
-  },
+  { code: "en", name: "English" },
+  { code: "ta", name: "தமிழ் (Tamil)" },
+  { code: "hi", name: "हिंदी (Hindi)" },
+  { code: "es", name: "Español" },
+  { code: "fr", name: "Français" },
+  { code: "de", name: "Deutsch" },
+  { code: "zh", name: "中文" },
+  { code: "ja", name: "日本語" },
 ]
 
 export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
@@ -49,14 +40,14 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const [step, setStep] = useState(0)
   const [preferences, setPreferences] = useState<UserPreferences>({
     educationLevel: null,
-    preferredLanguage: 'en',
+    preferredLanguage: "en",
     interestAreas: [],
     learningGoals: [],
-    interactionMode: null,
+    interactionMode: "text", // Set default value, removed from UI
   })
 
   const handleNext = () => {
-    if (step < 4) {
+    if (step < 3) {
       setStep(step + 1)
     } else {
       updatePreferences(preferences)
@@ -92,13 +83,13 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="mb-2 flex justify-between text-sm text-slate-400">
-            <span>Step {step + 1} of 5</span>
-            <span>{Math.round(((step + 1) / 5) * 100)}%</span>
+            <span>Step {step + 1} of 4</span>
+            <span>{Math.round(((step + 1) / 4) * 100)}%</span>
           </div>
           <div className="h-2 rounded-full bg-slate-700">
             <div
               className="h-full rounded-full bg-gradient-to-r from-blue-600 to-purple-600 transition-all"
-              style={{ width: `${((step + 1) / 5) * 100}%` }}
+              style={{ width: `${((step + 1) / 4) * 100}%` }}
             />
           </div>
         </div>
@@ -116,14 +107,13 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
                     onClick={() =>
                       setPreferences((prev) => ({
                         ...prev,
-                        educationLevel: level.toLowerCase().replace(' ', '') as any,
+                        educationLevel: level.toLowerCase().replace(" ", "") as any,
                       }))
                     }
                     className={`w-full rounded-lg border-2 px-4 py-3 text-left font-medium transition ${
-                      preferences.educationLevel ===
-                      level.toLowerCase().replace(' ', '')
-                        ? 'border-blue-600 bg-blue-600/20 text-white'
-                        : 'border-slate-600 text-slate-300 hover:border-slate-500'
+                      preferences.educationLevel === level.toLowerCase().replace(" ", "")
+                        ? "border-blue-600 bg-blue-600/20 text-white"
+                        : "border-slate-600 text-slate-300 hover:border-slate-500"
                     }`}
                   >
                     {level}
@@ -136,7 +126,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
           {step === 1 && (
             <div>
               <h2 className="mb-2 text-3xl font-bold text-white">Preferred Language</h2>
-              <p className="mb-6 text-slate-400">Choose your preferred language</p>
+              <p className="mb-6 text-slate-400">Choose your preferred language for learning</p>
               <div className="grid grid-cols-2 gap-3">
                 {LANGUAGES.map((lang) => (
                   <button
@@ -149,8 +139,8 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
                     }
                     className={`rounded-lg border-2 px-4 py-3 font-medium transition ${
                       preferences.preferredLanguage === lang.code
-                        ? 'border-blue-600 bg-blue-600/20 text-white'
-                        : 'border-slate-600 text-slate-300 hover:border-slate-500'
+                        ? "border-blue-600 bg-blue-600/20 text-white"
+                        : "border-slate-600 text-slate-300 hover:border-slate-500"
                     }`}
                   >
                     {lang.name}
@@ -171,8 +161,8 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
                     onClick={() => toggleInterest(area)}
                     className={`rounded-lg border-2 px-4 py-3 text-left font-medium transition ${
                       preferences.interestAreas.includes(area)
-                        ? 'border-blue-600 bg-blue-600/20 text-white'
-                        : 'border-slate-600 text-slate-300 hover:border-slate-500'
+                        ? "border-blue-600 bg-blue-600/20 text-white"
+                        : "border-slate-600 text-slate-300 hover:border-slate-500"
                     }`}
                   >
                     {area}
@@ -193,39 +183,11 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
                     onClick={() => toggleGoal(goal)}
                     className={`w-full rounded-lg border-2 px-4 py-3 text-left font-medium transition ${
                       preferences.learningGoals.includes(goal)
-                        ? 'border-blue-600 bg-blue-600/20 text-white'
-                        : 'border-slate-600 text-slate-300 hover:border-slate-500'
+                        ? "border-blue-600 bg-blue-600/20 text-white"
+                        : "border-slate-600 text-slate-300 hover:border-slate-500"
                     }`}
                   >
                     {goal}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {step === 4 && (
-            <div>
-              <h2 className="mb-2 text-3xl font-bold text-white">Interaction Mode</h2>
-              <p className="mb-6 text-slate-400">How would you like to interact with the AI?</p>
-              <div className="space-y-3">
-                {INTERACTION_MODES.map((mode) => (
-                  <button
-                    key={mode.id}
-                    onClick={() =>
-                      setPreferences((prev) => ({
-                        ...prev,
-                        interactionMode: mode.id as any,
-                      }))
-                    }
-                    className={`w-full rounded-lg border-2 px-4 py-4 text-left transition ${
-                      preferences.interactionMode === mode.id
-                        ? 'border-blue-600 bg-blue-600/20'
-                        : 'border-slate-600 hover:border-slate-500'
-                    }`}
-                  >
-                    <div className="font-medium text-white">{mode.label}</div>
-                    <div className="text-sm text-slate-400">{mode.description}</div>
                   </button>
                 ))}
               </div>
@@ -239,7 +201,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
             onClick={handleBack}
             disabled={step === 0}
             variant="outline"
-            className="border-slate-600"
+            className="border-slate-600 bg-transparent"
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
             Back
@@ -250,12 +212,11 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
             disabled={
               (step === 0 && !preferences.educationLevel) ||
               (step === 2 && preferences.interestAreas.length === 0) ||
-              (step === 3 && preferences.learningGoals.length === 0) ||
-              (step === 4 && !preferences.interactionMode)
+              (step === 3 && preferences.learningGoals.length === 0)
             }
             className="bg-blue-600 hover:bg-blue-700"
           >
-            {step === 4 ? 'Complete' : 'Next'}
+            {step === 3 ? "Get Started" : "Next"}
             <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
